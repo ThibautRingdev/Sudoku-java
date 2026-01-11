@@ -1,25 +1,63 @@
-import java.awt.*;         // Importe toutes les classes pour les composants GUI et les graphiques de l'AWT
-import java.awt.event.*;   // Importe toutes les classes pour la gestion des événements dans AWT (comme le clavier, la souris)
-import javax.swing.*;      // Importe toutes les classes pour créer des composants GUI avec Swing
+import java.awt.*;         
+import java.awt.event.*;   
+import javax.swing.*;      
 
 public class Sudoku {
     class Tile extends JButton {
         int r;
         int c;
+
         Tile(int r, int c) {
             this.r = r;
             this.c = c;
+
+            // Permettre de sélectionner la tuile et d'entrer un chiffre avec le clavier si la case est modifiable
+            this.setFocusPainted(false);
+
+            // Listener pour récupérer le focus quand on clique
+            this.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    requestFocusInWindow();
+                }
+            });
+
+            // Listener pour ajouter un chiffre quand l'utilisateur tape un chiffre
+            this.addKeyListener(new KeyAdapter() {
+                @Override
+                public void keyTyped(KeyEvent e) {
+                    // Si la case était bloquée (pré-remplie), on ignore
+                    if (!isEnabled()) return;
+
+                    char keyChar = e.getKeyChar();
+                    if (keyChar >= '1' && keyChar <= '9') {
+                        setText(String.valueOf(keyChar));
+                        puzzle[r][c] = keyChar - '0';
+                        // Feedback visuel si le chiffre est correct
+                        if (solution[r][c] == (keyChar - '0')) {
+                            setForeground(new Color(34,139,34)); // Vert si juste
+                        } else {
+                            setForeground(Color.RED); // Rouge sinon
+                        }
+                    } else if (keyChar == KeyEvent.VK_BACK_SPACE || keyChar == KeyEvent.VK_DELETE || keyChar == '0') {
+                        setText("");
+                        puzzle[r][c] = 0;
+                        setForeground(Color.BLACK);
+                    }
+                }
+            });
         }
     }
-    int boardWidth = 600;   // Largeur de la fenêtre
-    int boardHeight = 650;  // Hauteur de la fenêtre
 
-    JFrame frame = new JFrame("Sudoku"); // Fenêtre principale du jeu
+    int boardWidth = 600;   
+    int boardHeight = 650;  
 
+    JFrame frame = new JFrame("Sudoku"); 
     JLabel textLabel = new JLabel();
     JPanel textPanel = new JPanel();
     JPanel boardPanel = new JPanel();
 
+    // Les grilles sont passées non-final pour que les Tile y accèdent
     int[][] puzzle = {
         {5, 3, 0, 0, 7, 0, 0, 0, 0},
         {6, 0, 0, 1, 9, 5, 0, 0, 0},
@@ -44,33 +82,25 @@ public class Sudoku {
         {3, 4, 5, 2, 8, 6, 1, 7, 9}
     };
 
-
     Sudoku() {
         frame.setVisible(true);
-        // Définir la taille de la fenêtre
         frame.setSize(boardWidth, boardHeight);
         frame.setResizable(false);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Fermer l'application lorsque la fenêtre est fermée
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
 
-        // Centrer la fenêtre sur l'écran
         frame.setLocationRelativeTo(null);
 
-        // Utilise le layout BorderLayout pour organiser les éléments
         frame.setLayout(new BorderLayout());
 
-        // Configuration du label :
-        textLabel.setFont(new Font("Arial", Font.BOLD, 30)); // Police Arial, taille 30, gras
-        textLabel.setHorizontalAlignment(JLabel.CENTER);     // Centre le texte à l'intérieur du label
-        textLabel.setText("Sudoku: 0");                      // Texte affiché au lancement
-        textPanel.setLayout(new BorderLayout());             // Définit un layout pour le panel
+        textLabel.setFont(new Font("Arial", Font.BOLD, 30)); 
+        textLabel.setHorizontalAlignment(JLabel.CENTER);     
+        textLabel.setText("Sudoku: Ajoutez des chiffres !"); 
+        textPanel.setLayout(new BorderLayout());             
         textPanel.add(textLabel, BorderLayout.CENTER);
 
-        // Ajoute le panel à la fenêtre, en haut ("NORTH") du BorderLayout
         frame.add(textPanel, BorderLayout.NORTH);
 
-        // Crée une grille 9x9 pour le panneau du plateau du Sudoku
         boardPanel.setLayout(new GridLayout(9, 9));
-        // Ajouter les boutons/tuiles correspondant à chaque case du puzzle
         for (int r = 0; r < 9; r++) {
             for (int c = 0; c < 9; c++) {
                 Tile tile = new Tile(r, c);
@@ -81,13 +111,17 @@ public class Sudoku {
                     tile.setBackground(new Color(220, 220, 220));
                 } else {
                     tile.setText("");
+                    tile.setEnabled(true);
+                    tile.setBackground(Color.WHITE);
+
+                    // On peut cliquer pour le focus (géré plus haut)
+                    tile.setFocusable(true);
                 }
                 tile.setFont(new Font("Arial", Font.BOLD, 20));
                 boardPanel.add(tile);
             }
         }
 
-        // Ajoute le panneau de la grille au centre
         frame.add(boardPanel, BorderLayout.CENTER);
     }
 }
